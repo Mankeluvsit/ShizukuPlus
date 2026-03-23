@@ -37,6 +37,7 @@ dependencyResolutionManagement {
 include ":server", ":starter", ":shell", ":manager", ":common", ":database"
 
 def root = "api"
+def bundledApiRoot = "ShizukuPlus-API-master"
 
 def propFile = file("local.properties")
 def props = new Properties()
@@ -44,11 +45,16 @@ def props = new Properties()
 if (propFile.canRead()) {
     props.load(new FileInputStream(propFile))
 
-    if (props != null) {
-        if (props["api.useLocal"].equals("true")) {
-            root = props["api.dir"]
+    if ("true".equals(props.getProperty("api.useLocal"))) {
+        def configuredApiDir = props.getProperty("api.dir")
+        if (configuredApiDir != null && !configuredApiDir.isBlank()) {
+            root = configuredApiDir
         }
     }
+}
+
+if (!file(root).exists() && file(bundledApiRoot).exists()) {
+    root = bundledApiRoot
 }
 
 include ":aidl"

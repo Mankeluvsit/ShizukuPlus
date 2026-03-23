@@ -35,4 +35,10 @@
         android:summary="@string/settings_root_compatibility_hub_summary"
         android:icon="@drawable/ic_root_24dp" />
 
+    <Preference
+        android:key="termux_integration"
+        android:title="@string/termux_integration_title"
+        android:summary="@string/termux_integration_summary"
+        android:icon="@drawable/ic_terminal_24" />
+
 </PreferenceScreen>

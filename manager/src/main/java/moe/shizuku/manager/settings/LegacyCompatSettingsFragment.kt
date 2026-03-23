@@ -59,5 +59,10 @@ class LegacyCompatSettingsFragment : BaseSettingsFragment() {
             startActivity(Intent(context, RootCompatibilityActivity::class.java))
             true
         }
+
+        findPreference<Preference>("termux_integration")?.setOnPreferenceClickListener {
+            startActivity(Intent(context, TermuxIntegrationActivity::class.java))
+            true
+        }
     }
 }

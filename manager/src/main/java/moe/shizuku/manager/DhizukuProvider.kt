@@ -10,10 +10,20 @@ import android.os.Bundle
 import android.os.IBinder
 import android.os.ServiceManager
 import com.rosan.dhizuku.IDhizuku
+import moe.shizuku.manager.authorization.AuthorizationManager
 import moe.shizuku.manager.utils.ShizukuStateMachine
-import rikka.shizuku.Shizuku
 
 class DhizukuProvider : ContentProvider() {
+
+    private fun isCallerAuthorized(callingUid: Int): Boolean {
+        if (callingUid == android.os.Process.myUid()) {
+            return true
+        }
+
+        val packageManager = context?.packageManager ?: return false
+        val packages = packageManager.getPackagesForUid(callingUid) ?: return false
+        return packages.any { packageName -> AuthorizationManager.granted(packageName, callingUid) }
+    }
 
     private val binder = object : IDhizuku.Stub() {
         override fun getVersion(): Int = 1
@@ -21,13 +31,8 @@ class DhizukuProvider : ContentProvider() {
         override fun getBinder(): IBinder? {
             if (!ShizukuSettings.isDhizukuModeEnabled()) return null
             if (!ShizukuStateMachine.isRunning()) return null
-            
-            // Check if calling app has Shizuku permission
             val callingUid = Binder.getCallingUid()
-            if (Shizuku.checkRemotePermission("moe.shizuku.manager.permission.API_V23") != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                // In a real scenario, we might want to check the internal Shizuku whitelist here
-                // but for now we rely on the standard permission check
-            }
+            if (!isCallerAuthorized(callingUid)) return null
 
             return try {
                 ServiceManager.getService(Context.DEVICE_POLICY_SERVICE)
@@ -38,8 +43,7 @@ class DhizukuProvider : ContentProvider() {
 
         override fun isPermissionGranted(): Boolean {
             if (!ShizukuSettings.isDhizukuModeEnabled()) return false
-            // Simplified: if Shizuku is running and app has Shizuku permission, we count it as granted for Dhizuku too
-            return Shizuku.checkRemotePermission("moe.shizuku.manager.permission.API_V23") == android.content.pm.PackageManager.PERMISSION_GRANTED
+            return isCallerAuthorized(Binder.getCallingUid())
         }
 
         override fun transact(code: Int, data: Bundle?): Bundle {
@@ -63,6 +67,10 @@ class DhizukuProvider : ContentProvider() {
 
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         if ("getBinder" == method) {
+            if (!ShizukuSettings.isDhizukuModeEnabled()) return null
+            if (!ShizukuStateMachine.isRunning()) return null
+            if (!isCallerAuthorized(Binder.getCallingUid())) return null
+
             val bundle = Bundle()
             bundle.putBinder("binder", binder.asBinder())
             return bundle

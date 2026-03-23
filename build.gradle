@@ -34,9 +34,10 @@ def getGitCommitCount() {
 }
 
 def gitCommitCount = getGitCommitCount()
+def resolvedVersionCode = gitCommitCount > 0 ? gitCommitCount : 1
 def baseVersionName = "13.6.0"
 def isBeta = project.hasProperty("beta")
 ext {
-    versionCode = gitCommitCount
-    versionName = "${baseVersionName}.r${gitCommitCount}-shizukuplus${if (isBeta) "-beta" else ""}"
+    versionCode = resolvedVersionCode
+    versionName = "${baseVersionName}.r${resolvedVersionCode}-shizukuplus${if (isBeta) "-beta" else ""}${if (gitCommitCount == 0) "-local" else ""}"
 }

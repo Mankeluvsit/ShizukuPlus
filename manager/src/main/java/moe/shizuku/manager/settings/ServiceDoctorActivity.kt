@@ -1,9 +1,13 @@
 package moe.shizuku.manager.settings
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
@@ -11,9 +15,6 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -23,6 +24,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import moe.shizuku.manager.R
 import moe.shizuku.manager.app.AppBarActivity
 import moe.shizuku.manager.databinding.ActivityServiceDoctorBinding
@@ -38,6 +41,8 @@ class ServiceDoctorActivity : AppBarActivity() {
     private lateinit var checkListAdapter: CheckListAdapter
     private lateinit var tipsTextView: TextView
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var latestChecks: List<DoctorCheck> = emptyList()
+    private var latestTips: List<String> = emptyList()
 
     private val batteryOptimizationListener = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         runDiagnostics()
@@ -67,12 +72,42 @@ class ServiceDoctorActivity : AppBarActivity() {
         runDiagnostics()
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == android.R.id.home) {
-            finish()
-            return true
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menu.add(0, 1, 0, R.string.common_refresh).apply {
+            setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
+            setIcon(R.drawable.ic_autorenew)
         }
-        return super.onOptionsItemSelected(item)
+        menu.add(0, 2, 1, R.string.common_copy).apply {
+            setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
+            setIcon(R.drawable.ic_copy)
+        }
+        menu.add(0, 3, 2, R.string.common_share).apply {
+            setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
+            setIcon(R.drawable.ic_share_24)
+        }
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                finish()
+                true
+            }
+            1 -> {
+                runDiagnostics()
+                true
+            }
+            2 -> {
+                copyReport()
+                true
+            }
+            3 -> {
+                shareReport()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     override fun onDestroy() {
@@ -223,11 +258,52 @@ class ServiceDoctorActivity : AppBarActivity() {
         }
 
         checkListAdapter.submitList(checks)
+        latestChecks = checks
+        latestTips = tips
         tipsTextView.text = if (tips.isEmpty()) {
             "Your system seems well-configured for Shizuku+."
         } else {
             tips.joinToString("\n\n")
         }
+    }
+
+    private fun buildReport(): String {
+        return buildString {
+            append(getString(R.string.home_service_doctor_title))
+            append('\n')
+            append("Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})")
+            append("\n\n")
+            latestChecks.forEach { check ->
+                append(if (check.ok) "[OK] " else "[WARN] ")
+                append(check.title)
+                append(": ")
+                append(check.status)
+                append('\n')
+            }
+            if (latestTips.isNotEmpty()) {
+                append("\n")
+                append(getString(R.string.doctor_report_tips))
+                append('\n')
+                latestTips.forEach { tip ->
+                    append(tip)
+                    append('\n')
+                }
+            }
+        }
+    }
+
+    private fun copyReport() {
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.home_service_doctor_title), buildReport()))
+        Toast.makeText(this, R.string.termux_copied, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun shareReport() {
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, buildReport())
+        }
+        startActivity(Intent.createChooser(shareIntent, getString(R.string.common_share)))
     }
 
     private data class DoctorCheck(

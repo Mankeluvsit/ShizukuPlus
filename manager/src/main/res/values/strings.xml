@@ -292,6 +292,8 @@
     <string name="settings_activity_log">Activity log</string>
     <string name="settings_activity_log_empty">No activity recorded yet.</string>
     <string name="settings_activity_log_clear">Clear logs</string>
+    <string name="settings_activity_log_search_hint">Search activity…</string>
+    <string name="settings_activity_log_export_summary">%1$d visible records</string>
     <string name="settings_enable_activity_log">Enable activity log</string>
     <string name="settings_enable_activity_log_summary">Record and display Shizuku API calls and events on the home screen.</string>
     <string name="settings_show_activity_log_home">Show Activity Log</string>
@@ -364,6 +366,40 @@
     <string name="settings_fake_su_summary">Provide a Shizuku-backed \'su\' binary for legacy root apps that support custom paths.</string>
     <string name="settings_root_compatibility_hub">Root Compatibility Hub</string>
     <string name="settings_root_compatibility_hub_summary">Configure and manage legacy root apps to work with Shizuku+ privileges.</string>
+    <string name="termux_integration_title">Termux Integration</string>
+    <string name="termux_integration_summary">Grant Termux faster, copy setup commands, and verify shell access.</string>
+    <string name="termux_not_found_title">No Termux app detected</string>
+    <string name="termux_not_found_summary">Install Termux first, then return here to grant access and copy the shell bootstrap commands.</string>
+    <string name="termux_detected_title">%1$s detected</string>
+    <string name="termux_detected_summary">Package: %1$s\nVersion: %2$s</string>
+    <string name="termux_detected_package_label">Detected package</string>
+    <string name="termux_detected_package_none">No compatible Termux package found</string>
+    <string name="termux_authorization_label">Authorization</string>
+    <string name="termux_authorization_granted">Granted</string>
+    <string name="termux_authorization_not_granted">Not granted yet</string>
+    <string name="termux_authorization_unknown">Unknown</string>
+    <string name="termux_service_label">Service status</string>
+    <string name="termux_service_running">Shizuku service is running</string>
+    <string name="termux_service_stopped">Start the Shizuku service before granting or testing Termux access</string>
+    <string name="termux_export_label">Exported shell assets</string>
+    <string name="termux_export_status_missing">No export directory saved yet. Open the Terminal tutorial and export the helper files first.</string>
+    <string name="termux_export_status_ready">Export directory is configured: %1$s</string>
+    <string name="termux_bootstrap_title">Bootstrap command</string>
+    <string name="termux_verification_title">Verification command</string>
+    <string name="termux_bootstrap_missing">Export the shell helper files from the Terminal tutorial first.</string>
+    <string name="termux_verification_missing">Install Termux and grant it access to generate a verification command.</string>
+    <string name="termux_grant_button">Grant To Termux</string>
+    <string name="termux_open_button">Open Termux</string>
+    <string name="termux_refresh_button">Refresh Status</string>
+    <string name="termux_tutorial_button">Open Tutorial</string>
+    <string name="termux_copy_bootstrap_label">Copy bootstrap</string>
+    <string name="termux_copy_verify_label">Copy verify command</string>
+    <string name="termux_grant_success">Termux was granted Shizuku access</string>
+    <string name="termux_grant_failed">Failed to grant Termux access. Ensure Shizuku is running and try again.</string>
+    <string name="termux_copied">Copied to clipboard</string>
+    <string name="termux_warning_service">Shizuku must be running before Termux can be granted or verified.</string>
+    <string name="termux_warning_export">Export the rish/plus/su helper files from the Terminal tutorial before using the bootstrap command.</string>
+    <string name="termux_version_unknown">Unknown</string>
     <string name="root_hub_title">Root Compatibility</string>
     <string name="root_hub_description">Many legacy apps are built strictly for root access. Shizuku+ can "trick" these apps into using its privileges by providing a su bridge binary.</string>
     <string name="root_hub_suggested_apps">Suggested Apps</string>
@@ -434,6 +470,7 @@
     <string name="doctor_tip_battery">Disable battery optimization for Shizuku+ to prevent it from being killed in the background.</string>
     <string name="doctor_tip_adb">Wireless debugging must be active for Shizuku to start in non-root mode after a reboot.</string>
     <string name="doctor_button_fix">Fix</string>
+    <string name="doctor_report_tips">Troubleshooting tips</string>
 
     <!-- Snackbar -->
     <string name="snackbar_invalid_port">Port must be between 1 and 65535</string>
@@ -617,7 +654,16 @@
     <string name="empty_state_description_no_plus_features">You\'ve disabled all Shizuku+ features. Enable features to see them here.</string>
     <string name="empty_state_title_activity_log_empty">No activity recorded</string>
     <string name="empty_state_description_activity_log_empty">Shizuku API calls and events will appear here when activity logging is enabled.</string>
+    <string name="empty_state_title_activity_log_search">No matching activity</string>
+    <string name="empty_state_description_activity_log_search">Try a different search term or log filter.</string>
     <string name="empty_state_title_hidden_apps">No hidden apps</string>
     <string name="empty_state_description_hidden_apps">Apps you hide from the management list will appear here.</string>
+    <string name="log_filter_all">All</string>
+    <string name="log_filter_grants">Grants</string>
+    <string name="log_filter_revokes">Revokes</string>
+    <string name="log_filter_termux">Termux</string>
+    <string name="common_copy">Copy</string>
+    <string name="common_share">Share</string>
+    <string name="common_refresh">Refresh</string>
 
 </resources>
