@@ -112,6 +112,9 @@
             android:name=".settings.TermuxIntegrationActivity"
             android:label="@string/termux_integration_title" />
         <activity
+            android:name=".settings.BackupRestoreActivity"
+            android:label="@string/backup_restore_title" />
+        <activity
             android:name=".settings.ServiceDoctorActivity"
             android:label="@string/home_service_doctor_title" />
         <activity

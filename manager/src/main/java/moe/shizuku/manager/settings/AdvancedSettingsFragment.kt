@@ -30,6 +30,11 @@ class AdvancedSettingsFragment : BaseSettingsFragment() {
             true
         }
 
+        findPreference<Preference>("backup_restore")?.setOnPreferenceClickListener {
+            startActivity(Intent(context, BackupRestoreActivity::class.java))
+            true
+        }
+
         findPreference<androidx.preference.TwoStatePreference>(KEY_LEGACY_PAIRING)?.apply {
             isVisible = !EnvironmentUtils.isTelevision()
         }

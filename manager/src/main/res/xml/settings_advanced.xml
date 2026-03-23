@@ -32,6 +32,12 @@
         android:icon="@drawable/ic_history_24dp" />
 
     <Preference
+        android:key="backup_restore"
+        android:title="@string/backup_restore_title"
+        android:summary="@string/backup_restore_summary"
+        android:icon="@drawable/ic_copy" />
+
+    <Preference
         android:key="help"
         android:title="@string/settings_help"
         android:icon="@drawable/ic_help_outline_24dp" />

@@ -294,6 +294,15 @@
     <string name="settings_activity_log_clear">Clear logs</string>
     <string name="settings_activity_log_search_hint">Search activity…</string>
     <string name="settings_activity_log_export_summary">%1$d visible records</string>
+    <string name="backup_restore_title">Backup And Restore</string>
+    <string name="backup_restore_summary">Export Shizuku+ settings and app-management state as JSON, then import it on this or another device.</string>
+    <string name="backup_restore_preview_title">Backup Preview</string>
+    <string name="backup_restore_import_title">Import Backup JSON</string>
+    <string name="backup_restore_import_button">Import Backup</string>
+    <string name="backup_restore_import_hint">Paste the backup JSON here.</string>
+    <string name="backup_restore_import_empty">Paste a backup before importing.</string>
+    <string name="backup_restore_import_success">Backup imported. Re-open any affected screens to refresh state.</string>
+    <string name="backup_restore_import_failed">Import failed: %1$s</string>
     <string name="settings_enable_activity_log">Enable activity log</string>
     <string name="settings_enable_activity_log_summary">Record and display Shizuku API calls and events on the home screen.</string>
     <string name="settings_show_activity_log_home">Show Activity Log</string>
