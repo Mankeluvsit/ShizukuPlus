@@ -38,6 +38,12 @@
         android:icon="@drawable/ic_copy" />
 
     <Preference
+        android:key="preset_profiles"
+        android:title="@string/preset_profiles_title"
+        android:summary="@string/preset_profiles_summary"
+        android:icon="@drawable/ic_autorenew" />
+
+    <Preference
         android:key="help"
         android:title="@string/settings_help"
         android:icon="@drawable/ic_help_outline_24dp" />

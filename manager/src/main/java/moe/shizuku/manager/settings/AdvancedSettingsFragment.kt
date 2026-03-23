@@ -35,6 +35,11 @@ class AdvancedSettingsFragment : BaseSettingsFragment() {
             true
         }
 
+        findPreference<Preference>("preset_profiles")?.setOnPreferenceClickListener {
+            startActivity(Intent(context, PresetProfilesActivity::class.java))
+            true
+        }
+
         findPreference<androidx.preference.TwoStatePreference>(KEY_LEGACY_PAIRING)?.apply {
             isVisible = !EnvironmentUtils.isTelevision()
         }
