@@ -178,6 +178,17 @@
     <string name="app_management_filter_hidden">Hidden</string>
     <string name="app_management_action_sort">Sort</string>
     <string name="app_management_action_hidden_apps">Hidden apps</string>
+    <string name="app_management_profile_save">Save profile</string>
+    <string name="app_management_profile_apply">Apply profile</string>
+    <string name="app_management_profile_delete">Delete profile</string>
+    <string name="app_management_profile_save_button">Save</string>
+    <string name="app_management_profile_name_hint">Profile name</string>
+    <string name="app_management_profile_default_name">Current setup</string>
+    <string name="app_management_profile_name_empty">Enter a profile name</string>
+    <string name="app_management_profile_none">No saved profiles yet</string>
+    <string name="app_management_profile_saved">Saved profile: %1$s</string>
+    <string name="app_management_profile_applied">Applied profile: %1$s</string>
+    <string name="app_management_profile_deleted">Deleted profile: %1$s</string>
     <string name="app_management_sort_a_to_z">Name (A–Z)</string>
     <string name="app_management_sort_last_installed">Last installed</string>
     <string name="app_management_sort_last_updated">Last updated</string>

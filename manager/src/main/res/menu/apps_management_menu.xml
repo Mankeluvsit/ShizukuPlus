@@ -26,6 +26,21 @@
         android:showAsAction="never" />
 
     <item
+        android:id="@+id/action_save_profile"
+        android:title="@string/app_management_profile_save"
+        android:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_apply_profile"
+        android:title="@string/app_management_profile_apply"
+        android:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_delete_profile"
+        android:title="@string/app_management_profile_delete"
+        android:showAsAction="never" />
+
+    <item
         android:id="@+id/action_root_compat"
         android:title="@string/root_hub_title"
         android:showAsAction="never" />

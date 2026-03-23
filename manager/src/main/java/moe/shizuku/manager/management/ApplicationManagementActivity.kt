@@ -26,6 +26,7 @@ import androidx.core.widget.doOnTextChanged
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import moe.shizuku.manager.R
@@ -49,6 +50,7 @@ class ApplicationManagementActivity : AppBarActivity(), AppViewHolder.Callbacks 
     private val viewModel: AppsViewModel by viewModels()
     private val adapter = AppsAdapter()
     private lateinit var recyclerView: RecyclerView
+    private lateinit var appbarBinding: AppsAppbarActivityBinding
     private var firstLoad = true
     private var backCallback: androidx.activity.OnBackPressedCallback? = null
 
@@ -69,7 +71,7 @@ class ApplicationManagementActivity : AppBarActivity(), AppViewHolder.Callbacks 
         val binding = AppsActivityBinding.inflate(layoutInflater, rootView, false)
         setContentView(binding.root)
         
-        val appbarBinding = AppsAppbarActivityBinding.bind(rootView)
+        appbarBinding = AppsAppbarActivityBinding.bind(rootView)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         // Empty state view
@@ -250,6 +252,9 @@ class ApplicationManagementActivity : AppBarActivity(), AppViewHolder.Callbacks 
             R.id.sort_name -> { item.isChecked = true; viewModel.setSortOrder(SortOrder.NAME_ASC); true }
             R.id.sort_last_installed -> { item.isChecked = true; viewModel.setSortOrder(SortOrder.LAST_INSTALLED); true }
             R.id.sort_last_updated -> { item.isChecked = true; viewModel.setSortOrder(SortOrder.LAST_UPDATED); true }
+            R.id.action_save_profile -> { saveCurrentProfile(); true }
+            R.id.action_apply_profile -> { showApplyProfileDialog(); true }
+            R.id.action_delete_profile -> { showDeleteProfileDialog(); true }
             R.id.action_root_compat -> {
                 startActivity(Intent(this, moe.shizuku.manager.settings.RootCompatibilityActivity::class.java))
                 true
@@ -467,6 +472,74 @@ class ApplicationManagementActivity : AppBarActivity(), AppViewHolder.Callbacks 
     override fun onResume() {
         super.onResume()
         viewModel.refresh()
+    }
+
+    private fun saveCurrentProfile() {
+        val input = android.widget.EditText(this).apply {
+            hint = getString(R.string.app_management_profile_name_hint)
+            setText(getString(R.string.app_management_profile_default_name))
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.app_management_profile_save)
+            .setView(input)
+            .setPositiveButton(R.string.app_management_profile_save_button) { _, _ ->
+                val name = input.text?.toString()?.trim().orEmpty()
+                if (name.isBlank()) {
+                    Toast.makeText(this, R.string.app_management_profile_name_empty, Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                AppManagementProfileStore.save(this, viewModel.currentProfile(name))
+                Toast.makeText(this, getString(R.string.app_management_profile_saved, name), Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun showApplyProfileDialog() {
+        val profiles = AppManagementProfileStore.list(this)
+        if (profiles.isEmpty()) {
+            Toast.makeText(this, R.string.app_management_profile_none, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val names = profiles.map { it.name }.toTypedArray()
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.app_management_profile_apply)
+            .setItems(names) { _, which ->
+                applyProfile(profiles[which])
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun showDeleteProfileDialog() {
+        val profiles = AppManagementProfileStore.list(this)
+        if (profiles.isEmpty()) {
+            Toast.makeText(this, R.string.app_management_profile_none, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val names = profiles.map { it.name }.toTypedArray()
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.app_management_profile_delete)
+            .setItems(names) { _, which ->
+                val name = profiles[which].name
+                AppManagementProfileStore.delete(this, name)
+                Toast.makeText(this, getString(R.string.app_management_profile_deleted, name), Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun applyProfile(profile: AppManagementProfile) {
+        viewModel.applyProfile(profile)
+        appbarBinding.searchEditText.setText(profile.searchQuery)
+        when (profile.filterState) {
+            FilterState.ALL -> appbarBinding.chipAll.isChecked = true
+            FilterState.GRANTED -> appbarBinding.chipGranted.isChecked = true
+            FilterState.DENIED -> appbarBinding.chipDenied.isChecked = true
+            FilterState.HIDDEN -> appbarBinding.chipHidden.isChecked = true
+        }
+        invalidateOptionsMenu()
+        Toast.makeText(this, getString(R.string.app_management_profile_applied, profile.name), Toast.LENGTH_SHORT).show()
     }
 }
 

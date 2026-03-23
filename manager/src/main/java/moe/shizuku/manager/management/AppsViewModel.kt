@@ -61,6 +61,30 @@ class AppsViewModel(application: Application) : AndroidViewModel(application) {
         applyFiltersAndSort()
     }
 
+    fun currentProfile(name: String): AppManagementProfile {
+        return AppManagementProfile(
+            name = name,
+            sortOrder = sortOrder,
+            filterState = filterState,
+            searchQuery = searchQuery,
+            hiddenPackages = hiddenPackages.toSet()
+        )
+    }
+
+    fun applyProfile(profile: AppManagementProfile) {
+        sortOrder = profile.sortOrder
+        filterState = profile.filterState
+        searchQuery = profile.searchQuery
+        hiddenPackages.clear()
+        hiddenPackages.addAll(profile.hiddenPackages)
+        prefs.edit()
+            .putString(KEY_SORT, sortOrder.name)
+            .putStringSet(KEY_HIDDEN, hiddenPackages.toSet())
+            .apply()
+        _hiddenCount.value = hiddenPackages.size
+        applyFiltersAndSort()
+    }
+
     fun hidePackage(packageName: String) {
         hiddenPackages.add(packageName)
         prefs.edit().putStringSet(KEY_HIDDEN, hiddenPackages.toSet()).apply()
