@@ -197,7 +197,9 @@ class TermuxIntegrationActivity : AppBarActivity() {
     private fun buildVerificationCommand(app: TermuxApp): String {
         return buildString {
             append("export RISH_APPLICATION_ID=${app.packageName}\n")
-            append("sh \"\$HOME/rish\" -c 'id && getprop ro.build.version.release'")
+            append("sh \"\$HOME/rish\" -c 'id && getprop ro.build.version.release'\n")
+            append("sh \"\$HOME/plus\" status\n")
+            append("sh \"\$HOME/plus\" features")
         }
     }
 
