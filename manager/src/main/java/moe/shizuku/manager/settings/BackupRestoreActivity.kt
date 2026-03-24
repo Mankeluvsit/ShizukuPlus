@@ -19,7 +19,12 @@ import org.json.JSONObject
 class BackupRestoreActivity : AppBarActivity() {
 
     companion object {
+        private const val BACKUP_VERSION = 1
         private const val APP_MANAGEMENT_PREFS = "app_management_prefs"
+        private const val MAX_IMPORT_LENGTH = 512 * 1024
+        private const val KEY_VERSION = "version"
+        private const val KEY_SETTINGS = "settings"
+        private const val KEY_APP_MANAGEMENT = "app_management"
     }
 
     private lateinit var binding: ActivityBackupRestoreBinding
@@ -53,9 +58,11 @@ class BackupRestoreActivity : AppBarActivity() {
 
     private fun buildExportJson(): String {
         val root = JSONObject()
-        root.put("version", 1)
-        root.put("settings", prefsToJson(ShizukuSettings.getPreferences()))
-        root.put("app_management", prefsToJson(getSharedPreferences(APP_MANAGEMENT_PREFS, Context.MODE_PRIVATE)))
+        root.put(KEY_VERSION, BACKUP_VERSION)
+        root.put("source", packageName)
+        root.put("exported_at", System.currentTimeMillis())
+        root.put(KEY_SETTINGS, prefsToJson(ShizukuSettings.getPreferences()))
+        root.put(KEY_APP_MANAGEMENT, prefsToJson(getSharedPreferences(APP_MANAGEMENT_PREFS, Context.MODE_PRIVATE)))
         return root.toString(2)
     }
 
@@ -106,11 +113,25 @@ class BackupRestoreActivity : AppBarActivity() {
             Toast.makeText(this, R.string.backup_restore_import_empty, Toast.LENGTH_SHORT).show()
             return
         }
+        if (rawJson.length > MAX_IMPORT_LENGTH) {
+            Toast.makeText(this, getString(R.string.backup_restore_import_failed, "backup is too large"), Toast.LENGTH_LONG).show()
+            return
+        }
 
         try {
             val root = JSONObject(rawJson)
-            applyPrefsFromJson(ShizukuSettings.getPreferences(), root.optJSONObject("settings"))
-            applyPrefsFromJson(getSharedPreferences(APP_MANAGEMENT_PREFS, Context.MODE_PRIVATE), root.optJSONObject("app_management"))
+            val version = root.optInt(KEY_VERSION, -1)
+            if (version != BACKUP_VERSION) {
+                throw IllegalArgumentException("unsupported backup version: $version")
+            }
+            val settings = root.optJSONObject(KEY_SETTINGS)
+                ?: throw IllegalArgumentException("missing settings object")
+            val appManagement = root.optJSONObject(KEY_APP_MANAGEMENT)
+                ?: throw IllegalArgumentException("missing app_management object")
+
+            applyPrefsFromJson(ShizukuSettings.getPreferences(), settings)
+            applyPrefsFromJson(getSharedPreferences(APP_MANAGEMENT_PREFS, Context.MODE_PRIVATE), appManagement)
+            ShizukuSettings.syncAllPlusFeaturesToServer()
             Toast.makeText(this, R.string.backup_restore_import_success, Toast.LENGTH_LONG).show()
             refreshPreview()
             recreate()
@@ -134,11 +155,16 @@ class BackupRestoreActivity : AppBarActivity() {
                 is Int -> editor.putInt(key, value)
                 is Long -> editor.putLong(key, value)
                 is Double -> editor.putFloat(key, value.toFloat())
+                is Float -> editor.putFloat(key, value)
                 is String -> editor.putString(key, value)
                 is JSONArray -> {
                     val set = linkedSetOf<String>()
                     for (i in 0 until value.length()) {
-                        set += value.optString(i)
+                        val item = value.opt(i)
+                        if (item !is String) {
+                            throw IllegalArgumentException("non-string value in set for $key")
+                        }
+                        set += item
                     }
                     editor.putStringSet(key, set)
                 }

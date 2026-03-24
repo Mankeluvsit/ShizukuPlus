@@ -274,8 +274,26 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
     private final java.util.Map<String, Boolean> featureEnabledMap = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<String, String> plusSettingsMap = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.util.Set<String> CUSTOM_API_GATED_FEATURES = new java.util.HashSet<>(java.util.Arrays.asList(
+            "avf_manager",
+            "storage_proxy",
+            "continuity_bridge",
+            "ai_core_plus",
+            "window_manager_plus",
+            "overlay_manager_plus",
+            "network_governor_plus",
+            "activity_manager_plus",
+            "shell_interceptor",
+            "experimental_root",
+            "spoof_device",
+            "vector"
+    ));
 
     private boolean isFeatureEnabled(String key) {
+        if (CUSTOM_API_GATED_FEATURES.contains(key)
+                && !featureEnabledMap.getOrDefault("custom_api", true)) {
+            return false;
+        }
         return featureEnabledMap.getOrDefault(key, true);
     }
 

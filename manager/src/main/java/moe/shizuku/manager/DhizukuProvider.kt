@@ -15,6 +15,14 @@ import moe.shizuku.manager.utils.ShizukuStateMachine
 
 class DhizukuProvider : ContentProvider() {
 
+    companion object {
+        private const val KEY_ERROR = "error"
+        private const val KEY_RESULT = "result"
+        private const val ERROR_UNAUTHORIZED = "unauthorized"
+        private const val ERROR_UNAVAILABLE = "service_unavailable"
+        private const val ERROR_UNSUPPORTED = "unsupported_transaction"
+    }
+
     private fun isCallerAuthorized(callingUid: Int): Boolean {
         if (callingUid == android.os.Process.myUid()) {
             return true
@@ -47,9 +55,28 @@ class DhizukuProvider : ContentProvider() {
         }
 
         override fun transact(code: Int, data: Bundle?): Bundle {
-            // Dhizuku allows remote transactions on the DPM binder
-            // We can implement this by proxying to the DPM binder if needed
-            return Bundle()
+            val callingUid = Binder.getCallingUid()
+            if (!ShizukuSettings.isDhizukuModeEnabled()) {
+                return errorBundle(ERROR_UNAVAILABLE)
+            }
+            if (!ShizukuStateMachine.isRunning()) {
+                return errorBundle(ERROR_UNAVAILABLE)
+            }
+            if (!isCallerAuthorized(callingUid)) {
+                return errorBundle(ERROR_UNAUTHORIZED)
+            }
+
+            // Fail closed until we implement an explicit, audited proxy layer for
+            // each Dhizuku transaction shape instead of silently returning success.
+            return errorBundle(ERROR_UNSUPPORTED).apply {
+                putInt(KEY_RESULT, code)
+            }
+        }
+
+        private fun errorBundle(error: String): Bundle {
+            return Bundle().apply {
+                putString(KEY_ERROR, error)
+            }
         }
     }
 
