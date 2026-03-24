@@ -72,6 +72,7 @@ public class ShizukuSettings {
         public static final String KEY_SPOOF_TARGET = "spoof_target";
         public static final String KEY_VECTOR_ENABLED = "vector_enabled";
         public static final String KEY_HIDE_DISABLED_PLUS_FEATURES = "hide_disabled_plus_features";
+        public static final String KEY_PLUS_ACCESS_POLICY_PACKAGES = "plus_access_policy_packages";
 
         // Home card extras (Shizuku+ additions)
         public static final String KEY_SHOW_START_ADB_HOME = "show_start_adb_home";
@@ -594,6 +595,63 @@ public class ShizukuSettings {
         if (p != null) p.edit().putBoolean(Keys.KEY_HIDE_DISABLED_PLUS_FEATURES, enable).apply();
     }
 
+    private static final String PLUS_ACCESS_POLICY_PREFIX = "plus_access_policy.";
+    public static final String PLUS_ACCESS_POLICY_STANDARD = "standard";
+    public static final String PLUS_ACCESS_POLICY_TRUSTED = "trusted";
+    public static final String PLUS_ACCESS_POLICY_RESTRICTED = "restricted";
+
+    public static String getPlusAccessPolicy(@NonNull String packageName) {
+        SharedPreferences p = getPreferences();
+        if (p == null) return PLUS_ACCESS_POLICY_STANDARD;
+        return p.getString(PLUS_ACCESS_POLICY_PREFIX + packageName, PLUS_ACCESS_POLICY_STANDARD);
+    }
+
+    public static void setPlusAccessPolicy(@NonNull String packageName, @Nullable String policy) {
+        SharedPreferences p = getPreferences();
+        if (p == null) return;
+        String normalized = policy;
+        if (!PLUS_ACCESS_POLICY_TRUSTED.equals(normalized)
+                && !PLUS_ACCESS_POLICY_RESTRICTED.equals(normalized)) {
+            normalized = PLUS_ACCESS_POLICY_STANDARD;
+        }
+
+        java.util.Set<String> packages = new java.util.HashSet<>(
+                p.getStringSet(Keys.KEY_PLUS_ACCESS_POLICY_PACKAGES, new java.util.HashSet<>()));
+        packages.add(packageName);
+        p.edit()
+                .putString(PLUS_ACCESS_POLICY_PREFIX + packageName, normalized)
+                .putStringSet(Keys.KEY_PLUS_ACCESS_POLICY_PACKAGES, packages)
+                .apply();
+    }
+
+    @NonNull
+    public static java.util.Set<String> getPlusAccessPolicyPackages() {
+        SharedPreferences p = getPreferences();
+        if (p == null) return new java.util.HashSet<>();
+        return new java.util.HashSet<>(
+                p.getStringSet(Keys.KEY_PLUS_ACCESS_POLICY_PACKAGES, new java.util.HashSet<>()));
+    }
+
+    public static void syncPlusAccessPolicyToServer(@NonNull String packageName) {
+        if (!rikka.shizuku.Shizuku.pingBinder()) return;
+        new Thread(() -> {
+            try {
+                android.os.IBinder binder = (android.os.IBinder) rikka.shizuku.Shizuku.getBinder();
+                if (binder == null) return;
+                moe.shizuku.server.IShizukuService service = moe.shizuku.server.IShizukuService.Stub.asInterface(binder);
+                service.setPlusSetting("plus_access_policy." + packageName, getPlusAccessPolicy(packageName));
+            } catch (Exception e) {
+                Log.e("ShizukuSettings", "failed to sync plus access policy", e);
+            }
+        }).start();
+    }
+
+    private static void syncPlusAccessPoliciesToServer(moe.shizuku.server.IShizukuService service) throws android.os.RemoteException {
+        for (String packageName : getPlusAccessPolicyPackages()) {
+            service.setPlusSetting("plus_access_policy." + packageName, getPlusAccessPolicy(packageName));
+        }
+    }
+
     public static void syncAllPlusFeaturesToServer() {
         if (!rikka.shizuku.Shizuku.pingBinder()) return;
         new Thread(() -> {
@@ -643,6 +701,7 @@ public class ShizukuSettings {
                         Log.e("ShizukuSettings", "failed to update su_path", e);
                     }
                 }
+                syncPlusAccessPoliciesToServer(service);
             } catch (Exception e) {
                 Log.e("ShizukuSettings", "failed to process document result", e);
             }

@@ -140,6 +140,7 @@ class TermuxIntegrationActivity : AppBarActivity() {
             val success = withContext(Dispatchers.IO) {
                 runCatching {
                     AuthorizationManager.grant(app.packageName, app.uid)
+                    AuthorizationManager.setPlusAccessPolicy(app.packageName, ShizukuSettings.PLUS_ACCESS_POLICY_TRUSTED)
                     true
                 }.getOrDefault(false)
             }

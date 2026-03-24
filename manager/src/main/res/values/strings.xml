@@ -189,6 +189,12 @@
     <string name="app_management_profile_saved">Saved profile: %1$s</string>
     <string name="app_management_profile_applied">Applied profile: %1$s</string>
     <string name="app_management_profile_deleted">Deleted profile: %1$s</string>
+    <string name="app_management_context_plus_access">Set Plus access</string>
+    <string name="app_management_plus_access_standard">Standard Plus access</string>
+    <string name="app_management_plus_access_trusted">Trusted Plus access</string>
+    <string name="app_management_plus_access_restricted">Restricted Plus access</string>
+    <string name="app_management_plus_access_trusted_summary">Trusted for advanced Plus APIs</string>
+    <string name="app_management_plus_access_restricted_summary">Restricted from advanced Plus APIs</string>
     <string name="app_management_sort_a_to_z">Name (A–Z)</string>
     <string name="app_management_sort_last_installed">Last installed</string>
     <string name="app_management_sort_last_updated">Last updated</string>

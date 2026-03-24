@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Parcel
 import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.Manifest
+import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.utils.Logger.LOGGER
 import moe.shizuku.manager.utils.ShizukuSystemApis
 import rikka.shizuku.server.ServerConstants
@@ -91,5 +92,14 @@ object AuthorizationManager {
         } else {
             Shizuku.updateFlagsForUid(uid, MASK_PERMISSION, 0)
         }
+    }
+
+    fun getPlusAccessPolicy(packageName: String): String {
+        return ShizukuSettings.getPlusAccessPolicy(packageName)
+    }
+
+    fun setPlusAccessPolicy(packageName: String, policy: String) {
+        ShizukuSettings.setPlusAccessPolicy(packageName, policy)
+        ShizukuSettings.syncPlusAccessPolicyToServer(packageName)
     }
 }

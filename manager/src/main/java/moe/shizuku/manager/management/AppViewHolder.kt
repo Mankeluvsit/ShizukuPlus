@@ -111,6 +111,7 @@ class AppViewHolder(private val binding: AppListItemBinding) :
     private fun buildEnabledActions(context: Context, isGranted: Boolean): List<LpAction> {
         val appLabel = ai?.let { AppIconCache.getLabel(context, it) } ?: packageName
         val pm = context.packageManager
+        val isPlusCapable = AuthorizationManager.isPlusApiSupported(data)
         return buildList {
             if (ShizukuSettings.getLongPressOpenApp()) {
                 add(LpAction(context.getString(R.string.app_management_context_open_app)) {
@@ -156,6 +157,11 @@ class AppViewHolder(private val binding: AppListItemBinding) :
                 add(LpAction(context.getString(R.string.app_management_context_hide)) {
                     ActivityLogManager.log(appLabel, packageName, "Long-press: hide_app")
                     (context as? Callbacks)?.onHideApp(packageName)
+                })
+            }
+            if (isPlusCapable) {
+                add(LpAction(context.getString(R.string.app_management_context_plus_access)) {
+                    showPlusAccessPolicyDialog(context, appLabel)
                 })
             }
         }
@@ -242,6 +248,32 @@ class AppViewHolder(private val binding: AppListItemBinding) :
             .show()
     }
 
+    private fun showPlusAccessPolicyDialog(context: Context, appLabel: CharSequence) {
+        val values = arrayOf(
+            ShizukuSettings.PLUS_ACCESS_POLICY_STANDARD,
+            ShizukuSettings.PLUS_ACCESS_POLICY_TRUSTED,
+            ShizukuSettings.PLUS_ACCESS_POLICY_RESTRICTED
+        )
+        val labels = arrayOf(
+            context.getString(R.string.app_management_plus_access_standard),
+            context.getString(R.string.app_management_plus_access_trusted),
+            context.getString(R.string.app_management_plus_access_restricted)
+        )
+        val current = AuthorizationManager.getPlusAccessPolicy(packageName)
+        val selectedIndex = values.indexOf(current).takeIf { it >= 0 } ?: 0
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle(context.getString(R.string.app_management_context_plus_access))
+            .setSingleChoiceItems(labels, selectedIndex) { dialog, which ->
+                AuthorizationManager.setPlusAccessPolicy(packageName, values[which])
+                ActivityLogManager.log(appLabel.toString(), packageName, "PlusAccess: ${values[which]}")
+                adapter.notifyItemChanged(adapterPosition)
+                dialog.dismiss()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
     override fun onBind() {
         val appInfo = ai ?: return
         val context = itemView.context
@@ -301,8 +333,21 @@ class AppViewHolder(private val binding: AppListItemBinding) :
         val isPlusRequired = AuthorizationManager.isPlusApiSupported(data)
         val isPlusEnabled = ShizukuSettings.isCustomApiEnabled()
         val isPlusMissing = isPlusRequired && !isPlusEnabled
+        val plusPolicy = AuthorizationManager.getPlusAccessPolicy(packageName)
 
-        plus.visibility = if (isPlusMissing) View.VISIBLE else View.GONE
+        if (isPlusMissing) {
+            plus.visibility = View.VISIBLE
+            plus.text = context.getString(R.string.app_management_item_summary_requires_plus)
+        } else if (isPlusRequired && plusPolicy != ShizukuSettings.PLUS_ACCESS_POLICY_STANDARD) {
+            plus.visibility = View.VISIBLE
+            plus.text = when (plusPolicy) {
+                ShizukuSettings.PLUS_ACCESS_POLICY_TRUSTED -> context.getString(R.string.app_management_plus_access_trusted_summary)
+                ShizukuSettings.PLUS_ACCESS_POLICY_RESTRICTED -> context.getString(R.string.app_management_plus_access_restricted_summary)
+                else -> context.getString(R.string.app_management_item_summary_requires_plus)
+            }
+        } else {
+            plus.visibility = View.GONE
+        }
 
         itemView.isEnabled = !isPlusMissing
         itemView.alpha = if (isPlusMissing) 0.5f else 1.0f

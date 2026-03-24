@@ -274,6 +274,10 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
     private final java.util.Map<String, Boolean> featureEnabledMap = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<String, String> plusSettingsMap = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final String PLUS_ACCESS_POLICY_PREFIX = "plus_access_policy.";
+    private static final String PLUS_ACCESS_POLICY_STANDARD = "standard";
+    private static final String PLUS_ACCESS_POLICY_TRUSTED = "trusted";
+    private static final String PLUS_ACCESS_POLICY_RESTRICTED = "restricted";
     private static final java.util.Set<String> CUSTOM_API_GATED_FEATURES = new java.util.HashSet<>(java.util.Arrays.asList(
             "avf_manager",
             "storage_proxy",
@@ -288,6 +292,17 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             "spoof_device",
             "vector"
     ));
+    private static final java.util.Set<String> TRUSTED_PLUS_FEATURES = new java.util.HashSet<>(java.util.Arrays.asList(
+            "su_bridge",
+            "avf_manager",
+            "storage_proxy",
+            "continuity_bridge",
+            "ai_core_plus",
+            "window_manager_plus",
+            "overlay_manager_plus",
+            "network_governor_plus",
+            "activity_manager_plus"
+    ));
 
     private boolean isFeatureEnabled(String key) {
         if (CUSTOM_API_GATED_FEATURES.contains(key)
@@ -295,6 +310,42 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             return false;
         }
         return featureEnabledMap.getOrDefault(key, true);
+    }
+
+    private String getCallingPackageName() {
+        int callingUid = Binder.getCallingUid();
+        int callingPid = Binder.getCallingPid();
+        ClientRecord caller = clientManager.findClient(callingUid, callingPid);
+        if (caller != null && caller.packageName != null) {
+            return caller.packageName;
+        }
+        List<String> packages = PackageManagerApis.getPackagesForUidNoThrow(callingUid);
+        if (packages == null || packages.isEmpty()) {
+            return null;
+        }
+        return packages.get(0);
+    }
+
+    private String getPlusAccessPolicy(String packageName) {
+        if (packageName == null || MANAGER_APPLICATION_ID.equals(packageName)) {
+            return PLUS_ACCESS_POLICY_TRUSTED;
+        }
+        return plusSettingsMap.getOrDefault(PLUS_ACCESS_POLICY_PREFIX + packageName, PLUS_ACCESS_POLICY_STANDARD);
+    }
+
+    private boolean isCallerAllowedForPlusFeature(String featureName) {
+        String packageName = getCallingPackageName();
+        String policy = getPlusAccessPolicy(packageName);
+        if (PLUS_ACCESS_POLICY_RESTRICTED.equals(policy)) {
+            LOGGER.w("deny %s for %s: restricted plus policy", featureName, packageName);
+            return false;
+        }
+        if (TRUSTED_PLUS_FEATURES.contains(featureName)
+                && !PLUS_ACCESS_POLICY_TRUSTED.equals(policy)) {
+            LOGGER.w("deny %s for %s: trusted plus policy required", featureName, packageName);
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -337,7 +388,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         String callingPkg = (caller != null) ? caller.packageName : "unknown";
         
         // SU Bridge interception: strip su wrapper and run command directly via Shizuku privileges
-        if (isFeatureEnabled("su_bridge") && cmd != null && cmd.length > 0) {
+        if (isFeatureEnabled("su_bridge") && isCallerAllowedForPlusFeature("su_bridge") && cmd != null && cmd.length > 0) {
             String base = cmd[0];
             if (base.equals("su") || base.endsWith("/su")) {
                 dispatchLog(callingPkg, "su " + String.join(" ", cmd));
@@ -1063,6 +1114,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     @Override
     public IVirtualMachineManager getVirtualMachineManager() {
         enforceCallingPermission("getVirtualMachineManager");
+        if (!isCallerAllowedForPlusFeature("avf_manager")) return null;
         if (!isFeatureEnabled("avf_manager")) return null;
         return virtualMachineManager;
     }
@@ -1070,6 +1122,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     @Override
     public IStorageProxy getStorageProxy() {
         enforceCallingPermission("getStorageProxy");
+        if (!isCallerAllowedForPlusFeature("storage_proxy")) return null;
         if (!isFeatureEnabled("storage_proxy")) return null;
         return storageProxy;
     }
@@ -1077,6 +1130,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     @Override
     public IAICorePlus getAICorePlus() {
         enforceCallingPermission("getAICorePlus");
+        if (!isCallerAllowedForPlusFeature("ai_core_plus")) return null;
         if (!isFeatureEnabled("ai_core_plus")) return null;
         return aiCorePlus;
     }
@@ -1084,6 +1138,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     @Override
     public IWindowManagerPlus getWindowManagerPlus() {
         enforceCallingPermission("getWindowManagerPlus");
+        if (!isCallerAllowedForPlusFeature("window_manager_plus")) return null;
         if (!isFeatureEnabled("window_manager_plus")) return null;
         return windowManagerPlus;
     }
@@ -1091,6 +1146,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     @Override
     public IContinuityBridge getContinuityBridge() {
         enforceCallingPermission("getContinuityBridge");
+        if (!isCallerAllowedForPlusFeature("continuity_bridge")) return null;
         if (!isFeatureEnabled("continuity_bridge")) return null;
         return continuityBridge;
     }
@@ -1098,6 +1154,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     @Override
     public IOverlayManagerPlus getOverlayManagerPlus() {
         enforceCallingPermission("getOverlayManagerPlus");
+        if (!isCallerAllowedForPlusFeature("overlay_manager_plus")) return null;
         if (!isFeatureEnabled("overlay_manager_plus")) return null;
         return overlayManagerPlus;
     }
@@ -1105,6 +1162,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     @Override
     public INetworkGovernorPlus getNetworkGovernorPlus() {
         enforceCallingPermission("getNetworkGovernorPlus");
+        if (!isCallerAllowedForPlusFeature("network_governor_plus")) return null;
         if (!isFeatureEnabled("network_governor_plus")) return null;
         return networkGovernorPlus;
     }
@@ -1112,6 +1170,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     @Override
     public IActivityManagerPlus getActivityManagerPlus() {
         enforceCallingPermission("getActivityManagerPlus");
+        if (!isCallerAllowedForPlusFeature("activity_manager_plus")) return null;
         if (!isFeatureEnabled("activity_manager_plus")) return null;
         return activityManagerPlus;
     }
